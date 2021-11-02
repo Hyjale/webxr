@@ -2,18 +2,17 @@
 
 #[macro_use]
 mod utils;
+mod wgl_renderer;
 
-use futures::{future, Future};
 use js_sys::Promise;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::rc::Rc;
 use utils::set_panic_hook;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::future_to_promise;
-use wasm_bindgen_futures::JsFuture;
 use web_sys::*;
+use wgl_renderer::create_webgl_context;
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
@@ -23,32 +22,6 @@ macro_rules! log {
 
 fn request_animation_frame(session: &XrSession, f: &Closure<dyn FnMut(f64, XrFrame)>) -> i32 {
     session.request_animation_frame(f.as_ref().unchecked_ref())
-}
-
-pub fn create_webgl_context(xr_mode: bool) -> Result<WebGl2RenderingContext, JsValue> {
-    let canvas = web_sys::window()
-        .unwrap()
-        .document()
-        .unwrap()
-        .get_element_by_id("canvas")
-        .unwrap()
-        .dyn_into::<HtmlCanvasElement>()
-        .unwrap();
-
-    let gl: WebGl2RenderingContext = if xr_mode {
-        let mut gl_attribs = HashMap::new();
-        gl_attribs.insert(String::from("xrCompatible"), true);
-        let js_gl_attribs = JsValue::from_serde(&gl_attribs).unwrap();
-
-        canvas
-            .get_context_with_context_options("webgl2", &js_gl_attribs)?
-            .unwrap()
-            .dyn_into()?
-    } else {
-        canvas.get_context("webgl2")?.unwrap().dyn_into()?
-    };
-
-    Ok(gl)
 }
 
 #[wasm_bindgen]
@@ -74,7 +47,6 @@ impl XrApp {
     pub fn init(&self) -> Promise {
         log!("Starting WebXR...");
         let navigator: web_sys::Navigator = web_sys::window().unwrap().navigator();
-        let gpu = navigator.gpu();
         let xr = navigator.xr();
         let session_mode = XrSessionMode::Inline;
         let session_supported_promise = xr.is_session_supported(session_mode);

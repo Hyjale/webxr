@@ -1,8 +1,8 @@
 [package]
 name = "webxr"
 version = "0.1.0"
-authors = ["The wasm-bindgen Developers"]
-edition = "2018"
+authors = ["Jae Lee"]
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib"]
@@ -28,6 +28,10 @@ features = [
   'RequestInit',
   'RequestMode',
   'Response',
+  'WebGlBuffer',
+  'WebGlProgram',
+  'WebGlShader',
+  'WebGlVertexArrayObject',
   'WebGl2RenderingContext',
   'Window',
   'Xr',
