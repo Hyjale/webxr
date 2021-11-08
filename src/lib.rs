@@ -13,6 +13,7 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::future_to_promise;
 use web_sys::*;
 use wgl_renderer::create_webgl_context;
+use wgl_renderer::draw;
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
@@ -84,6 +85,7 @@ impl XrApp {
     pub fn start(&self) {
         let f = Rc::new(RefCell::new(None));
         let g = f.clone();
+        let gl = self.gl.clone();
 
         let mut i = 0;
         *g.borrow_mut() = Some(Closure::wrap(Box::new(move |time: f64, frame: XrFrame| {
