@@ -13,7 +13,6 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::future_to_promise;
 use web_sys::*;
 use wgl_renderer::create_webgl_context;
-use wgl_renderer::draw;
 
 macro_rules! log {
     ( $( $t:tt )* ) => {
@@ -28,6 +27,7 @@ fn request_animation_frame(session: &XrSession, f: &Closure<dyn FnMut(f64, XrFra
 #[wasm_bindgen]
 pub struct XrApp {
     session: Rc<RefCell<Option<XrSession>>>,
+    ref_space: Rc<RefCell<Option<XrReferenceSpace>>>,
     gl: Rc<WebGl2RenderingContext>,
 }
 
@@ -38,21 +38,23 @@ impl XrApp {
         set_panic_hook();
 
         let session = Rc::new(RefCell::new(None));
-
+        let ref_space = Rc::new(RefCell::new(None));
         let xr_mode = true;
         let gl = Rc::new(create_webgl_context(xr_mode).unwrap());
 
-        XrApp { session, gl }
+        XrApp { session, ref_space, gl }
     }
 
     pub fn init(&self) -> Promise {
         log!("Starting WebXR...");
+
         let navigator: web_sys::Navigator = web_sys::window().unwrap().navigator();
         let xr = navigator.xr();
-        let session_mode = XrSessionMode::Inline;
+        let session_mode = XrSessionMode::ImmersiveVr;
         let session_supported_promise = xr.is_session_supported(session_mode);
 
         let session = self.session.clone();
+        let ref_space = self.ref_space.clone();
         let gl = self.gl.clone();
 
         let future_ = async move {
@@ -73,6 +75,13 @@ impl XrApp {
             render_state_init.base_layer(Some(&xr_gl_layer));
             xr_session.update_render_state_with_state(&render_state_init);
 
+            let ref_space_promise =
+                xr_session.request_reference_space(XrReferenceSpaceType::Local);
+            let xr_ref_space = wasm_bindgen_futures::JsFuture::from(ref_space_promise).await;
+            let xr_ref_space: XrReferenceSpace = xr_ref_space.unwrap().into();
+            let mut ref_space = ref_space.borrow_mut();
+            ref_space.replace(xr_ref_space);
+
             let mut session = session.borrow_mut();
             session.replace(xr_session);
 
@@ -86,22 +95,7 @@ impl XrApp {
         let f = Rc::new(RefCell::new(None));
         let g = f.clone();
         let gl = self.gl.clone();
-
-        let mut i = 0;
-        *g.borrow_mut() = Some(Closure::wrap(Box::new(move |time: f64, frame: XrFrame| {
-            log!("Frame rendering...");
-            if i > 2 {
-                log!("All done!");
-
-                let _ = f.borrow_mut().take();
-                return;
-            }
-
-            let sess: XrSession = frame.session();
-            i += 1;
-
-            request_animation_frame(&sess, f.borrow().as_ref().unwrap());
-        }) as Box<dyn FnMut(f64, XrFrame)>));
+        let ref_space = self.ref_space.clone();
 
         let session: &Option<XrSession> = &self.session.borrow();
         let sess: &XrSession = if let Some(sess) = session {
@@ -109,6 +103,21 @@ impl XrApp {
         } else {
             return ();
         };
+
+        *g.borrow_mut() = Some(Closure::wrap(Box::new(move |time: f64, frame: XrFrame| {
+            let sess: XrSession = frame.session();
+            let gl_layer = sess.render_state().base_layer().unwrap();
+
+            gl.bind_framebuffer(
+                WebGl2RenderingContext::FRAMEBUFFER,
+                Some(&gl_layer.framebuffer()),
+            );
+
+            gl.clear_color((time / 2000.).cos() as f32, (time / 4000.).cos() as f32, (time / 6000.).cos() as f32, 1.);
+            gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
+
+            request_animation_frame(&sess, f.borrow().as_ref().unwrap());
+        }) as Box<dyn FnMut(f64, XrFrame)>));
 
         request_animation_frame(sess, g.borrow().as_ref().unwrap());
     }

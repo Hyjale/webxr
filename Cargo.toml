@@ -16,7 +16,7 @@ serde = { version = "1.0.80", features = ["derive"] }
 serde_derive = "^1.0.59"
 
 [dependencies.web-sys]
-version = "0.3.36"
+version = "0.3.4"
 features = [
   'Document',
   'Element',
@@ -29,6 +29,7 @@ features = [
   'RequestMode',
   'Response',
   'WebGlBuffer',
+  'WebGlFramebuffer',
   'WebGlProgram',
   'WebGlShader',
   'WebGlVertexArrayObject',
