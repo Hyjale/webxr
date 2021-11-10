@@ -58,8 +58,7 @@ impl XrApp {
         let gl = self.gl.clone();
 
         let future_ = async move {
-            let supports_session =
-                wasm_bindgen_futures::JsFuture::from(session_supported_promise).await;
+            let supports_session = wasm_bindgen_futures::JsFuture::from(session_supported_promise).await;
             let supports_session = supports_session.unwrap();
             if supports_session == false {
                 log!("XR session not supported");
