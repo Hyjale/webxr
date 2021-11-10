@@ -2,7 +2,7 @@
 
 #[macro_use]
 mod utils;
-mod wgl_renderer;
+mod renderer;
 
 use js_sys::Promise;
 use std::cell::RefCell;
@@ -12,7 +12,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::future_to_promise;
 use web_sys::*;
-use wgl_renderer::create_webgl_context;
+use renderer::renderer::create_webgl_context;
 
 macro_rules! log {
     ( $( $t:tt )* ) => {

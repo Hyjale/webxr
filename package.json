@@ -1,7 +1,8 @@
 {
   "scripts": {
     "build": "webpack",
-    "vr-barebones" : "webpack serve --env example=vr-barebones"
+    "vr-barebones" : "webpack serve --env example=vr-barebones",
+    "immersive-vr-session" : "webpack serve --env example=immersive-vr-session"
   },
   "dependencies": {
     "webxr": "./pkg"
