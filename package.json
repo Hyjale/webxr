@@ -1,7 +1,6 @@
 {
   "scripts": {
     "build": "webpack",
-    "serve" : "webpack serve",
     "vr-barebones" : "webpack serve --env example=vr-barebones"
   },
   "dependencies": {

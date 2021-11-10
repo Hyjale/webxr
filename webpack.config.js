@@ -4,8 +4,6 @@ const webpack = require('webpack');
 const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 
 module.exports = (env) => {
-    example = env.example;
-
     return {
         entry: path.resolve(env.example, 'index.js'),
         output: {
